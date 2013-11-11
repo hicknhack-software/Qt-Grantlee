@@ -24,6 +24,7 @@
 
 using namespace Grantlee;
 
+
 OutputStream::OutputStream()
   : m_stream( 0 )
 {
@@ -71,19 +72,15 @@ QSharedPointer<OutputStream> OutputStream::clone( QTextStream *stream ) const
 
 OutputStream& OutputStream::operator<<( const QString& input )
 {
-  if ( m_stream )
-    ( *m_stream ) << input;
+  if( m_stream )
+    append( input );
   return *this;
 }
 
 OutputStream& OutputStream::operator<<( const Grantlee::SafeString& input )
 {
-  if ( m_stream ) {
-    if ( input.needsEscape() )
-      ( *m_stream ) << escape( input.get() );
-    else
-      ( *m_stream ) << input.get();
-  }
+  if ( m_stream )
+	append( input.needsEscape() ? escape( input.get() ) : input.get() );
   return *this;
 }
 /*
@@ -96,8 +93,8 @@ OutputStream& OutputStream::operator<<(const Grantlee::OutputStream::Escape& e)
 OutputStream& OutputStream::operator<<( QTextStream* stream )
 {
   if ( m_stream )
-    ( *m_stream ) << stream->readAll();
-  return *this;
+    append( stream->readAll() );
+	return *this;
 }
 /*
 Grantlee::OutputStream::MarkSafe::MarkSafe(const QString& input)
@@ -112,3 +109,44 @@ Grantlee::OutputStream::MarkSafe::MarkSafe(const Grantlee::SafeString& input)
 
 }
 */
+
+void OutputStream::append( QString text )
+{
+
+  static QRegExp emptyLineStart("^(\\s*\\n)");
+  static QRegExp wsString("^[\\n\\s]*$");
+  static QRegExp lastLine("\\n([^\\n]*)$");
+
+  if ( text.isEmpty() )
+    return;
+
+  //text is only whitespace
+  if ( wsString.indexIn(m_last_line)  != -1 )
+  {
+    m_last_line = "";
+    if( !text.contains("{") )
+    {
+      text.replace(emptyLineStart, "");
+    }
+    else  //don't remove line breaks before '{'
+    {
+      text.replace(QRegExp("^(\\s[^\\n])*\\{(\\s*\\n)"),"{\n");
+    }
+  }
+  else 
+  {
+    text = m_last_line + text;
+  }
+
+  //text is multiline
+  //delete last line if empty
+  if ( text.contains("\n") ) {
+    lastLine.indexIn( text );
+    if ( lastLine.captureCount() > 1 ) {
+      m_last_line = lastLine.cap(1);
+      text.replace( lastLine, "" );
+    }
+  }
+
+  ( *m_stream ) << text;
+}

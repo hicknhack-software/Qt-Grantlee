@@ -26,6 +26,8 @@
 #include <QtCore/QSharedPointer>
 #include <QtCore/QTextStream>
 
+#include <QRegExp>
+
 namespace Grantlee
 {
 
@@ -127,7 +129,10 @@ public:
   OutputStream& operator<<( QTextStream *stream );
 
 private:
+  void append( QString text );
+
   QTextStream *m_stream;
+  QString m_last_line;
   Q_DISABLE_COPY( OutputStream )
 };
 
