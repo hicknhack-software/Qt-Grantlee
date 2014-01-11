@@ -28,6 +28,7 @@
 #include <QtCore/QStack>
 #include <QtCore/QStringList>
 #include <QtCore/QQueue>
+#include <QtCore/QPair>
 
 using namespace Grantlee;
 
@@ -90,6 +91,19 @@ QVariant CustomTypeRegistry::lookup( const QVariant &object, const QString &prop
 {
   if ( !object.isValid() )
     return QVariant();
+
+  if ( object.canConvert<QObject*>() )
+    return doQobjectLookUp( object.value<QObject*>(), property );
+
+  if ( object.canConvert<QVariantPair>() )
+    return doPairLookUp( object.value<QVariantPair>(), property );
+
+  if ( object.canConvert<QVariantHash>() )
+    return doAssociativeLookUp( object.value<QAssociativeIterable>(), property );
+
+  if ( object.canConvert<QVariantList>() )
+    return doSequentialLookUp( object.value<QSequentialIterable>(), property );
+
   const int id = object.userType();
   MetaType::LookupFunction lf;
 
@@ -118,6 +132,13 @@ QVariantList CustomTypeRegistry::toVariantList( const QVariant &variant ) const
 {
   if ( !variant.isValid() )
     return QVariantList();
+
+  if ( variant.canConvert<QVariantHash>() )
+    return QVariant::fromValue( variant.toHash().keys() ).toList();
+
+  if ( variant.canConvert< QVariantList >() ) {
+    return variant.value< QVariantList >();
+  }
 
   const int id = variant.userType();
   MetaType::ToVariantListFunction tvlf;

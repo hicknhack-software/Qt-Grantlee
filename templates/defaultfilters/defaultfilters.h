@@ -21,6 +21,8 @@
 #ifndef DEFAULTFILTERS_H
 #define DEFAULTFILTERS_H
 
+#include <QtCore/QtPlugin>
+
 #include "datetime.h"
 #include "integers.h"
 #include "lists.h"
@@ -41,6 +43,7 @@ class DefaultFiltersLibrary : public QObject, public TagLibraryInterface
 {
   Q_OBJECT
   Q_INTERFACES( Grantlee::TagLibraryInterface )
+  Q_PLUGIN_METADATA( IID "org.grantlee.TagLibraryInterface" FILE "grantlee_defaultfilters.json" )
 public:
   DefaultFiltersLibrary( QObject *parent = 0 )
       : QObject( parent ) {

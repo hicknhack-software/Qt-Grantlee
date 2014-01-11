@@ -21,6 +21,8 @@
 #ifndef SCRIPTABLETAGS_H
 #define SCRIPTABLETAGS_H
 
+#include <QtCore/QtPlugin>
+
 #include "node.h"
 #include "taglibraryinterface.h"
 
@@ -40,6 +42,7 @@ class ScriptableTagLibrary : public QObject, public TagLibraryInterface
 {
   Q_OBJECT
   Q_INTERFACES( Grantlee::TagLibraryInterface )
+  Q_PLUGIN_METADATA( IID "org.grantlee.TagLibraryInterface" FILE "grantlee_scriptabletags.json" )
 public:
   ScriptableTagLibrary( QObject *parent = 0 );
 

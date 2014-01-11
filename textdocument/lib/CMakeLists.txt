@@ -15,9 +15,7 @@ add_library(grantlee_gui SHARED
 )
 generate_export_header(grantlee_gui)
 
-target_link_libraries(grantlee_gui
-  LINK_PUBLIC Qt4::QtGui Qt4::QtCore
-)
+qt5_use_modules(grantlee_gui Core Gui)
 
 if (NOT CMAKE_BUILD_TYPE MATCHES TestCocoon)
   set_target_properties(grantlee_gui PROPERTIES

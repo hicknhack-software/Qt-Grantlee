@@ -69,6 +69,9 @@ private:
 
 void TestScriptableTagsSyntax::initTestCase()
 {
+
+  Q_INIT_RESOURCE(testresource);
+
   m_engine = new Engine( this );
   QString appDirPath = QFileInfo( QCoreApplication::applicationDirPath() ).absoluteDir().path();
   m_engine->setPluginPaths( QStringList() << QLatin1String( GRANTLEE_PLUGIN_PATH )
@@ -80,6 +83,8 @@ void TestScriptableTagsSyntax::initTestCase()
 void TestScriptableTagsSyntax::cleanupTestCase()
 {
   delete m_engine;
+
+  Q_CLEANUP_RESOURCE(testresource);
 }
 
 void TestScriptableTagsSyntax::doTest()

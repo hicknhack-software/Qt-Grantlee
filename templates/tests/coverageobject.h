@@ -1,6 +1,8 @@
 #ifndef _TEST_COVERAGE_OBJECT_H
 #define _TEST_COVERAGE_OBJECT_H
-#include <QObject>
+
+#include <QtCore/QObject>
+
 class CoverageObject : public QObject
 {
   Q_OBJECT

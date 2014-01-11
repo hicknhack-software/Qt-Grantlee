@@ -71,6 +71,8 @@ void TestLoaderTags::initTestCase()
 {
   m_engine = new Engine( this );
 
+  Q_INIT_RESOURCE(testresource);
+
   loader = InMemoryTemplateLoader::Ptr( new InMemoryTemplateLoader() );
   m_engine->addTemplateLoader( loader );
 
@@ -84,6 +86,8 @@ void TestLoaderTags::initTestCase()
 void TestLoaderTags::cleanupTestCase()
 {
   delete m_engine;
+
+  Q_CLEANUP_RESOURCE(testresource);
 }
 
 void TestLoaderTags::doTest()

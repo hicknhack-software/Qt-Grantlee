@@ -300,7 +300,7 @@ void TestBuiltinSyntax::testObjects()
   SafeString s3(s1);
   Q_UNUSED(s3);
 
-  QMetaType::construct(qMetaTypeId<MetaEnumVariable>(), 0);
+  QMetaType::create(qMetaTypeId<MetaEnumVariable>(), 0);
 }
 
 void TestBuiltinSyntax::initTestCase()

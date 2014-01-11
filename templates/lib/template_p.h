@@ -26,6 +26,8 @@
 
 #if QT_VERSION < 0x040600
 #include <QtCore/QPointer>
+#else
+#include <QtCore/QWeakPointer>
 #endif
 
 namespace Grantlee

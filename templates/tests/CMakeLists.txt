@@ -1,7 +1,6 @@
 project(grantlee_templates_tests)
 
-find_package(Qt4 4.5.0 REQUIRED QtTest)
-include_directories(${QT_INCLUDES})
+find_package(Qt5 5.0.0 REQUIRED Test LinguistTools)
 
 #building on Solaris with Sun Studio uses stdcxx which does not have TR1 fully implemented
 #take it from boost
@@ -45,7 +44,7 @@ configure_file(grantlee_paths.h.cmake ${PROJECT_BINARY_DIR}/grantlee_paths.h)
 
 set(TESTS_LOCALES "fr_FR" "de_DE")
 
-set(LINGUIST_TS_ARGS COMMAND "${QT_LUPDATE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_input.cpp" "-ts")
+set(LINGUIST_TS_ARGS COMMAND "${Qt5_LUPDATE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_input.cpp" "-ts")
 
 foreach(TESTS_LOCALE ${TESTS_LOCALES})
     set( LINGUIST_TS_ARGS ${LINGUIST_TS_ARGS} "${CMAKE_CURRENT_SOURCE_DIR}/test_${TESTS_LOCALE}.ts" )
@@ -55,7 +54,7 @@ add_custom_target(test_l10n
   ${LINGUIST_TS_ARGS}
 )
 
-set( LINGUIST_QM_ARGS COMMAND "${QT_LRELEASE_EXECUTABLE}" )
+set( LINGUIST_QM_ARGS COMMAND "${Qt5_LRELEASE_EXECUTABLE}" )
 
 foreach(TESTS_LOCALE ${TESTS_LOCALES})
     set( generate_QMs ${generate_QMs} ${LINGUIST_QM_ARGS} "${CMAKE_CURRENT_SOURCE_DIR}/test_${TESTS_LOCALE}.ts" "-qm" "${CMAKE_CURRENT_BINARY_DIR}/test_${TESTS_LOCALE}.qm" )
@@ -70,12 +69,13 @@ add_custom_command(
 configure_file(testresource.qrc.cmake "${PROJECT_BINARY_DIR}/testresource.qrc")
 
 set (_rcc_file "${PROJECT_BINARY_DIR}/testresource.qrc")
-qt4_add_resources(_testresource_rcc_src ${_rcc_file} OPTIONS -root "/" )
+qt5_add_resources(_testresource_rcc_src ${_rcc_file} OPTIONS -root "/" )
 
 add_library(template_test_builtins STATIC coverageobject.cpp
   coverageobject.cpp
   ${_testresource_rcc_src}
 )
+qt5_use_modules(template_test_builtins Core Script Test )
 
 macro(GRANTLEE_TEMPLATES_UNIT_TESTS)
   foreach(_testname ${ARGN})
@@ -83,7 +83,8 @@ macro(GRANTLEE_TEMPLATES_UNIT_TESTS)
                   ${_testname}.cpp
     )
     add_test(${_testname} ${_testname}_exec )
-    target_link_libraries(${_testname}_exec Qt4::QtTest grantlee_core template_test_builtins)
+    target_link_libraries(${_testname}_exec grantlee_core template_test_builtins)
+    qt5_use_modules( ${_testname}_exec Core Script Test )
 
     set_property(GLOBAL APPEND PROPERTY TEST_COVERAGE "${CMAKE_CURRENT_BINARY_DIR}/${_testname}_exec" )
   endforeach(_testname)

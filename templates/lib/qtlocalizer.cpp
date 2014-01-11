@@ -44,8 +44,8 @@ struct Locale
   }
 
   const QLocale locale;
-  QVector<QTranslator*> systemTranslators;
-  QVector<QTranslator*> themeTranslators;
+  std::vector<QTranslator*> systemTranslators;
+  std::vector<QTranslator*> themeTranslators;
 };
 
 namespace Grantlee
@@ -132,7 +132,7 @@ QString QtLocalizerPrivate::translate( const QString& input, const QString& cont
     result = translator->translate( "GR_FILENAME", input.toLatin1().constData(), context.toLatin1().constData(), count );
   }
   if ( result.isEmpty() ) {
-    if ( locale->systemTranslators.isEmpty() )
+    if ( locale->systemTranslators.empty() )
       return QCoreApplication::translate( "GR_FILENAME", input.toLatin1().constData(), context.toLatin1().constData(), QCoreApplication::CodecForTr, count );
     Q_FOREACH( QTranslator *translator, locale->systemTranslators ) {
       result = translator->translate( "GR_FILENAME", input.toLatin1().constData(), context.toLatin1().constData(), count );
@@ -179,7 +179,7 @@ void QtLocalizer::installTranslator( QTranslator* translator, const QString &loc
     const QLocale namedLocale( localeName );
     d->m_availableLocales.insert( localeName, new Locale( namedLocale ) );
   }
-  d->m_availableLocales[localeName]->systemTranslators.prepend( translator );
+  d->m_availableLocales[localeName]->systemTranslators.push_back( translator );
 }
 
 QString QtLocalizer::localizeDate( const QDate& date, QLocale::FormatType formatType ) const
@@ -291,10 +291,10 @@ void QtLocalizer::pushLocale( const QString& localeName )
     QTranslator *qtTranslator = new QTranslator;
     qtTranslator->load( QLatin1Literal( "qt_" ) + localeName,
                         QLibraryInfo::location( QLibraryInfo::TranslationsPath ) );
-    localeStruct->systemTranslators.append( qtTranslator );
+    localeStruct->systemTranslators.push_back( qtTranslator );
     QTranslator *appTranslator = new QTranslator;
     appTranslator->load( d->m_appTranslatorPrefix + localeName, d->m_appTranslatorPath );
-    localeStruct->systemTranslators.append( appTranslator );
+    localeStruct->systemTranslators.push_back( appTranslator );
     d->m_availableLocales.insert( localeName, localeStruct );
   } else {
     localeStruct = d->m_availableLocales[ localeName ];
@@ -323,7 +323,7 @@ void QtLocalizer::loadCatalog( const QString &path, const QString& catalog )
 
     translator->setObjectName( catalog );
 
-    it.value()->themeTranslators.prepend( translator );
+    it.value()->themeTranslators.push_back( translator );
   }
 }
 
@@ -333,7 +333,7 @@ void QtLocalizer::unloadCatalog( const QString& catalog )
   QHash< QString, Locale* >::const_iterator it = d->m_availableLocales.constBegin();
   const QHash< QString, Locale* >::const_iterator end = d->m_availableLocales.constEnd();
   for ( ; it != end; ++it ) {
-    QVector<QTranslator*>::iterator tranIt = ( *it )->themeTranslators.begin();
+    std::vector<QTranslator*>::iterator tranIt = ( *it )->themeTranslators.begin();
     while ( tranIt != ( *it )->themeTranslators.end() ) {
       if ( ( *tranIt )->objectName() == catalog ) {
         delete *tranIt;

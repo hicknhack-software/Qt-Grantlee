@@ -7,8 +7,6 @@ find_package(Grantlee REQUIRED)
 add_definitions(${QT_DEFINITIONS})
 
 include_directories(
-  ${QT_INCLUDES}
-  ${QT_QTCORE_INCLUDE_DIR}
   ${Grantlee_INCLUDE_DIRS}
   ${PROJECT_BINARY_DIR}
 )
@@ -28,8 +26,8 @@ add_executable(template_dirs_test
 
 target_link_libraries(
   template_dirs_test
-  Qt4::QtCore
   ${Grantlee_TEMPLATES_LIBRARIES}
 )
 
+qt5_use_modules(template_dirs_test Core Gui)
 

@@ -42,11 +42,9 @@
 #include <tr1/memory>
 #endif
 
-GRANTLEE_REGISTER_SEQUENTIAL_CONTAINER        (ThreeArray)
-GRANTLEE_SEQUENTIAL_TYPE_CONTAINER_ACCESSOR   (ThreeArray)
+Q_DECLARE_SEQUENTIAL_CONTAINER_METATYPE(ThreeArray)
 
-GRANTLEE_REGISTER_ASSOCIATIVE_CONTAINER       (QtUnorderedMap)
-GRANTLEE_ASSOCIATIVE_TYPE_CONTAINER_ACCESSOR  (QtUnorderedMap)
+Q_DECLARE_ASSOCIATIVE_CONTAINER_METATYPE(QtUnorderedMap)
 
 GRANTLEE_SMART_PTR_ACCESSOR(std::tr1::shared_ptr)
 
@@ -142,8 +140,6 @@ void TestGenericTypes::initTestCase()
   // Register the handler for our custom type
   Grantlee::registerMetaType<Person>();
 #ifndef GRANTLEE_NO_TR1
-  GRANTLEE_REGISTER_ASSOCIATIVE_CONTAINER_IF( QtUnorderedMap, Person )
-  GRANTLEE_REGISTER_SEQUENTIAL_CONTAINER_IF( ThreeArray, Person )
   Grantlee::registerMetaType<std::tr1::shared_ptr<PersonObject> >();
 #endif
   Grantlee::registerMetaType<QSharedPointer<PersonObject> >();
@@ -226,8 +222,9 @@ void testSequentialIteration( Grantlee::Context c )
     Grantlee::Template t1 = engine.newTemplate(
         QLatin1String( "{% for person in people %}{{ person.name }},{% endfor %}" ),
         QLatin1String( "people_template" ) );
+    QString rendered = t1->render( &c );
     QCOMPARE(
-      t1->render( &c ),
+      rendered,
       QLatin1String( "Claire,Grant,Alan," ) );
   }
 }
@@ -243,8 +240,9 @@ void testSequentialIndexing( Grantlee::Context c )
     Grantlee::Template t1 = engine.newTemplate(
         QLatin1String( "{{ people.0.name }},{{ people.1.name }},{{ people.2.name }}," ),
         QLatin1String( "people_template" ) );
+    QString rendered = t1->render( &c );
     QCOMPARE(
-      t1->render( &c ),
+      rendered,
       QLatin1String( "Claire,Grant,Alan," ) );
   }
 }
@@ -282,7 +280,8 @@ struct SequentialContainerTester<QSet<T> >
       QVERIFY( result.contains(s) );
     }
 
-    QCOMPARE(result.length(), output.join(QString()).length());
+    QString joined( output.join(QString()) );
+    QCOMPARE(result.length(), joined.length());
   }
 
   static void indexing(Grantlee::Context)

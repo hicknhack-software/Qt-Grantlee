@@ -221,6 +221,74 @@ QVariant doQobjectLookUp( const QObject * const object, const QString &property 
   return object->property( property.toUtf8().constData() );
 }
 
+QVariant doPairLookUp( const QVariantPair& pair, const QString& property )
+{
+    if ( property == QLatin1String( "0" ) || property == QLatin1String( "first" ) ) {
+        return pair.first;
+    }
+    if ( property == QLatin1String( "1" ) || property == QLatin1String( "second" ) ) {
+        return pair.second;
+    }
+    return QVariant();
+}
+
+QVariant doAssociativeLookUp( const QAssociativeIterable& associative, const QString &property )
+{
+    QVariant result = associative.value( property );
+    if( result.isValid() ) {
+        return result;
+    }
+
+    if ( property == QLatin1String( "size" ) || property == QLatin1String( "count" ) ) {
+        return QVariant::fromValue<int>( associative.size() );
+    }
+
+    if ( property == QLatin1String( "items" ) ) {
+        QVariantList list;
+        list.reserve( associative.size() );
+        for (QAssociativeIterable::const_iterator it = associative.begin(); it != associative.end(); ++it) {
+            list.push_back( QVariantList() << it.key() << it.value() ); // push_back required or all elements are added individually
+        }
+        return list;
+    }
+
+    if ( property == QLatin1String( "keys" ) ) {
+      QVariantList list;
+      list.reserve( associative.size() );
+      for (QAssociativeIterable::const_iterator it = associative.begin(); it != associative.end(); ++it) {
+        list << it.key();
+      }
+      return list;
+    }
+
+    if ( property == QLatin1String( "values" ) ) {
+      QVariantList list;
+      list.reserve( associative.size() );
+      for (QAssociativeIterable::const_iterator it = associative.begin(); it != associative.end(); ++it) {
+        list << it.value();
+      }
+      return list;
+    }
+
+    return QVariant();
+}
+
+QVariant GRANTLEE_CORE_EXPORT doSequentialLookUp( const QSequentialIterable& sequence, const QString &property )
+{
+    if ( property == QLatin1String( "size" ) || property == QLatin1String( "count" ) ) {
+      return QVariant::fromValue<int>( sequence.size() );
+    }
+
+    bool ok = false;
+    const size_t listIndex = ( size_t )property.toInt( &ok );
+
+    if ( !ok || listIndex >= ( size_t )sequence.size() ) {
+      return QVariant();
+    }
+
+    return sequence.at(listIndex);
+}
+
 template <>
 QVariant TypeAccessor<QObject*>::lookUp( const QObject * const object, const QString &property )
 {

@@ -99,28 +99,6 @@ using std::map;
      DECLARE_BUILTIN_TYPE_CONTAINERS(Type)                        \
      DECLARE_TR1_TYPE_CONTAINERS(Type)                            \
 
-namespace Grantlee {
-
-template<typename T, typename U>
-struct KeyGetter<QtUnorderedMap<T, U> > : public Getter<QtUnorderedMap<T, U> >
-{
-  static T get(typename QtUnorderedMap<T, U>::const_iterator it)
-  {
-    return it->first;
-  }
-};
-
-template<typename T, typename U>
-struct MappedValueGetter<QtUnorderedMap<T, U> > : public Getter<QtUnorderedMap<T, U> >
-{
-  static U get(typename QtUnorderedMap<T, U>::const_iterator it)
-  {
-    return it->second;
-  }
-};
-
-}
-
 #else
 
 #  define DECLARE_TYPE_CONTAINERS(Type)                          \

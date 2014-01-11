@@ -1,7 +1,6 @@
 project(grantlee_templates)
 
 include_directories(
-  ${QT_INCLUDES}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/../scriptabletags
 )
@@ -64,6 +63,7 @@ add_library(grantlee_core SHARED
   ${scriptabletags_SRCS}
 )
 generate_export_header(grantlee_core)
+set_property(TARGET grantlee_core APPEND PROPERTY COMPILE_DEFINITIONS QT_DISABLE_DEPRECATED_BEFORE=0)
 
 if (BUILD_TESTS)
   set(GRANTLEE_TESTS_EXPORT "GRANTLEE_CORE_EXPORT")
@@ -75,9 +75,11 @@ file(READ "${CMAKE_CURRENT_BINARY_DIR}/grantlee_test_export.h" _content)
 
 file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/grantlee_core_export.h" "${_content}")
 
-target_link_libraries(grantlee_core
-  LINK_PUBLIC Qt4::QtCore
-  LINK_PRIVATE Qt4::QtScript
+qt5_use_modules(grantlee_core
+  LINK_PUBLIC Core
+)
+qt5_use_modules(grantlee_core
+  LINK_PRIVATE Script
 )
 
 if (NOT CMAKE_BUILD_TYPE MATCHES TestCocoon)

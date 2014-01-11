@@ -21,6 +21,8 @@
 #ifndef I18N_TAGS_H
 #define I18N_TAGS_H
 
+#include <QtCore/QtPlugin>
+
 #include "taglibraryinterface.h"
 
 #include "i18n.h"
@@ -41,6 +43,7 @@ class I18nTagLibrary : public QObject, public TagLibraryInterface
 {
   Q_OBJECT
   Q_INTERFACES( Grantlee::TagLibraryInterface )
+  Q_PLUGIN_METADATA( IID "org.grantlee.TagLibraryInterface" FILE "grantlee_i18ntags.json" )
 public:
   I18nTagLibrary() {
   }

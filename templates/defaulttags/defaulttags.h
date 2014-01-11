@@ -21,6 +21,8 @@
 #ifndef DEFAULTTAGS_H
 #define DEFAULTTAGS_H
 
+#include <QtCore/QtPlugin>
+
 #include "autoescape.h"
 #include "comment.h"
 #include "cycle.h"
@@ -55,6 +57,7 @@ class DefaultTagLibrary : public QObject, public TagLibraryInterface
 {
   Q_OBJECT
   Q_INTERFACES( Grantlee::TagLibraryInterface )
+  Q_PLUGIN_METADATA( IID "org.grantlee.TagLibraryInterface" FILE "grantlee_defaulttags.json" )
 public:
   DefaultTagLibrary( QObject *parent = 0 )
       : QObject( parent ) {

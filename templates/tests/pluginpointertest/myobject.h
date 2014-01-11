@@ -22,12 +22,14 @@
 #define MYOBJECT_H
 
 #include <QtCore/QObject>
+#include <QtCore/QtPlugin>
 #include "myinterface.h"
 
 class MyObject : public QObject, public MyInterface
 {
   Q_OBJECT
   Q_INTERFACES( MyInterface )
+  Q_PLUGIN_METADATA( IID "org.grantlee.MyInterface" FILE "myobject.json" )
 public:
   MyObject( int stop = 4, QObject *parent = 0 );
 
