@@ -80,7 +80,7 @@ OutputStream& OutputStream::operator<<( const QString& input )
 OutputStream& OutputStream::operator<<( const Grantlee::SafeString& input )
 {
   if ( m_stream )
-	append( input.needsEscape() ? escape( input.get() ) : input.get() );
+    append( input.needsEscape() ? escape( input.get() ) : (QString)input.get() );
   return *this;
 }
 /*
@@ -112,41 +112,35 @@ Grantlee::OutputStream::MarkSafe::MarkSafe(const Grantlee::SafeString& input)
 
 void OutputStream::append( QString text )
 {
-
-  static QRegExp emptyLineStart("^(\\s*\\n)");
-  static QRegExp wsString("^[\\n\\s]*$");
-  static QRegExp lastLine("\\n([^\\n]*)$");
+  static QRegExp whitespace("[^\\n\\s]");
 
   if ( text.isEmpty() )
     return;
 
-  //text is only whitespace
-  if ( wsString.indexIn(m_last_line)  != -1 )
-  {
-    m_last_line = "";
-    if( !text.contains("{") )
-    {
-      text.replace(emptyLineStart, "");
-    }
-    else  //don't remove line breaks before '{'
-    {
-      text.replace(QRegExp("^(\\s[^\\n])*\\{(\\s*\\n)"),"{\n");
-    }
-  }
-  else 
-  {
-    text = m_last_line + text;
+  int firstNewlineIndex = text.indexOf("\n");
+  if ( -1 == firstNewlineIndex ) {
+    ( *m_stream ) << text;
+    m_last_line += text;
+    return;
   }
 
-  //text is multiline
-  //delete last line if empty
-  if ( text.contains("\n") ) {
-    lastLine.indexIn( text );
-    if ( lastLine.captureCount() > 1 ) {
-      m_last_line = lastLine.cap(1);
-      text.replace( lastLine, "" );
-    }
+  QString firstLine = text.left(firstNewlineIndex + 1);
+  ( *m_stream ) << firstLine;
+  m_last_line += firstLine;
+  text = text.mid(firstNewlineIndex + 1);
+
+  if ( -1 == m_last_line.indexOf(whitespace) )
+  {
+      m_stream->seek( m_stream->pos() - m_last_line.length() );
   }
 
-  ( *m_stream ) << text;
+  ( *m_stream) << text;
+
+  int lastNewlineIndex = text.lastIndexOf("\n");
+  if ( -1 == lastNewlineIndex ) {
+      m_last_line = text;
+  }
+  else {
+      m_last_line = text.mid( lastNewlineIndex + 1 );
+  }
 }
