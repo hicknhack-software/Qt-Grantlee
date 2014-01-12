@@ -1,6 +1,7 @@
 project(grantlee_templates_tests)
 
 find_package(Qt5Test 5.2.0 CONFIG REQUIRED)
+find_package(Qt5LinguistTools 5.2.0 REQUIRED)
 
 #building on Solaris with Sun Studio uses stdcxx which does not have TR1 fully implemented
 #take it from boost
@@ -42,34 +43,31 @@ set( GRANTLEE_PLUGIN_PATH "${CMAKE_BINARY_DIR}/" )
 
 configure_file(grantlee_paths.h.cmake ${PROJECT_BINARY_DIR}/grantlee_paths.h)
 
-set(TESTS_LOCALES "fr_FR" "de_DE")
+set( TESTS_LOCALES "fr_FR" "de_DE" )
+get_filename_component(TESTS_TRANSLATE_SOURCES "test_input.cpp" ABSOLUTE)
 
-set(LINGUIST_TS_ARGS COMMAND "${QT_LUPDATE_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/test_input.cpp" "-ts")
-
+set( TESTS_TS_SOURCES )
 foreach(TESTS_LOCALE ${TESTS_LOCALES})
-    set( LINGUIST_TS_ARGS ${LINGUIST_TS_ARGS} "${CMAKE_CURRENT_SOURCE_DIR}/test_${TESTS_LOCALE}.ts" )
+  get_filename_component(TS_SOURCE "test_${TESTS_LOCALE}.ts" ABSOLUTE)
+  set( TESTS_TS_SOURCES ${TESTS_TS_SOURCES} "${TS_SOURCE}")
 endforeach()
 
 add_custom_target(test_l10n
-  ${LINGUIST_TS_ARGS}
+  COMMAND ${QT5_LUPDATE_EXECUTABLE}
+  ARGS ${TESTS_TRANSLATE_SOURCES} -ts ${TESTS_TS_SOURCES}
+  DEPENDS ${TESTS_TRANSLATE_SOURCES} ${TESTS_TS_SOURCES}
 )
 
-set( LINGUIST_QM_ARGS COMMAND "${QT_LRELEASE_EXECUTABLE}" )
+qt5_add_translation(TESTS_QM_FILES test_de_DE.ts test_fr_FR.ts test_input.cpp)
 
-foreach(TESTS_LOCALE ${TESTS_LOCALES})
-    set( generate_QMs ${generate_QMs} ${LINGUIST_QM_ARGS} "${CMAKE_CURRENT_SOURCE_DIR}/test_${TESTS_LOCALE}.ts" "-qm" "${CMAKE_CURRENT_BINARY_DIR}/test_${TESTS_LOCALE}.qm" )
-endforeach()
+set (TESTS_SCRIPTS scripteddefaults.qs testtags.qs)
 
-add_custom_command(
-  OUTPUT test_de_DE.qm test_fr_FR.qm
-  ${generate_QMs}
-  DEPENDS test_de_DE.ts test_fr_FR.ts
-)
+set (_testresource_qrc "${PROJECT_BINARY_DIR}/testresource.qrc")
 
-configure_file(testresource.qrc.cmake "${PROJECT_BINARY_DIR}/testresource.qrc")
+configure_file(testresource.qrc.cmake ${_testresource_qrc})
 
-set (_rcc_file "${PROJECT_BINARY_DIR}/testresource.qrc")
-qt5_add_resources(_testresource_rcc_src ${_rcc_file} OPTIONS -root "/" )
+qt5_add_resources(_testresource_cpp ${_testresource_qrc} OPTIONS -root "/")
+set_property(SOURCE ${_testresource_qrc} APPEND PROPERTY DEPENDS ${TESTS_QM_FILES} ${TESTS_SCRIPTS})
 
 qt5_generate_moc(coverageobject.h "${CMAKE_CURRENT_BINARY_DIR}/coverageobject.moc")
 macro(GRANTLEE_TEMPLATES_UNIT_TESTS)
@@ -82,7 +80,7 @@ macro(GRANTLEE_TEMPLATES_UNIT_TESTS)
                   coverageobject.cpp
                   "${CMAKE_CURRENT_BINARY_DIR}/coverageobject.moc"
                   ${moc_output_file}
-                  ${_testresource_rcc_src}
+                  ${_testresource_cpp}
     )
     add_test(${_testname} ${_testname}_exec )
     target_link_libraries(${_testname}_exec Qt5::Test Grantlee::Templates )
