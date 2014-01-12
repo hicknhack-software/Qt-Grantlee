@@ -271,7 +271,8 @@ struct SequentialContainerTester<QSet<T> >
       QVERIFY( result.contains(s) );
     }
 
-    QCOMPARE(result.length(), output.join(QString()).length());
+    QString joined( output.join(QString()) );
+    QCOMPARE(result.length(), joined.length());
   }
 
   static void indexing(Grantlee::Context)
