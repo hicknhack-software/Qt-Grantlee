@@ -58,29 +58,29 @@ void CustomTypeRegistry::registerLookupOperator( int id, MetaType::LookupFunctio
   info.lookupFunction = f;
 }
 
+MetaType::LookupFunction CustomTypeRegistry::findConverterLookup( int objectType ) const
+{
+  QHashIterator<int, CustomTypeInfo> i(types);
+  while ( i.hasNext() ) {
+    i.next();
+    if ( 0 != i.value().lookupFunction
+        && QMetaType::hasRegisteredConverterFunction(objectType, i.key()) ) {
+      return i.value().lookupFunction;
+    }
+  }
+  return 0;
+}
+
 QVariant CustomTypeRegistry::lookup( const QVariant &object, const QString &property ) const
 {
-  if ( !object.isValid() )
+  int objectType = object.userType();
+  MetaType::LookupFunction lf = types.value(objectType).lookupFunction;
+  if ( 0 == lf ) {
+    lf = findConverterLookup( objectType );
+  }
+  if ( 0 == lf ) {
+    qWarning() << "No lookup function for metatype" << QMetaType::typeName( objectType );
     return QVariant();
-  const int id = object.userType();
-  MetaType::LookupFunction lf;
-
-  {
-    if ( !types.contains( id ) ) {
-      qWarning() << "Don't know how to handle metatype" << QMetaType::typeName( id );
-      // :TODO: Print out error message
-      return QVariant();
-    }
-
-    const CustomTypeInfo &info = types[id];
-    if ( !info.lookupFunction ) {
-      qWarning() << "No lookup function for metatype" << QMetaType::typeName( id );
-      lf = 0;
-      // :TODO: Print out error message
-      return QVariant();
-    }
-
-    lf = info.lookupFunction;
   }
 
   return lf( object, property );

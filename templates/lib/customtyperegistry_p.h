@@ -69,6 +69,9 @@ struct CustomTypeRegistry
 
   QHash<int, CustomTypeInfo> types;
   QMutex mutex;
+
+private:
+  MetaType::LookupFunction findConverterLookup(int objectType) const;
 };
 
 }
