@@ -49,28 +49,21 @@ void Grantlee::MetaType::registerLookUpOperator( int id, LookupFunction f )
   customTypes()->registerLookupOperator( id, f );
 }
 
-QVariant doQobjectLookUp( const QObject * const object, const QString &property )
+inline QVariant doQobjectLookUp( const QObject * const object, const QString &property )
 {
-  if (!object)
+  if ( ! object ) {
     return QVariant();
-  if ( property == QLatin1String( "children" ) ) {
-    const QObjectList childList = object->children();
-    if ( childList.isEmpty() )
-      return QVariant();
-    QVariantList children;
-
-    QObjectList::const_iterator it = childList.constBegin();
-    const QObjectList::const_iterator end = childList.constEnd();
-    for ( ; it != end; ++it )
-      children.append( QVariant::fromValue( *it ) );
-    return children;
   }
-
+  if ( property == QLatin1String( "children" ) ) {
+    return QVariant::fromValue( object->children() );
+  }
   if ( property == QLatin1String( "objectName" ) ) {
     return object->objectName();
   }
   // Can't be const because of invokeMethod.
   const QMetaObject *metaObj = object->metaObject();
+
+  const QByteArray propertyUtf8 = property.toUtf8();
 
   QMetaProperty mp;
   for ( int i = 0; i < metaObj->propertyCount(); ++i ) {
@@ -78,112 +71,113 @@ QVariant doQobjectLookUp( const QObject * const object, const QString &property 
     // This might also handle the variant messing I hit before.
     mp = metaObj->property( i );
 
-    if ( QString::fromUtf8( mp.name() ) != property )
-      continue;
+    if ( mp.isReadable() && mp.name() == propertyUtf8 ) {
+      if ( mp.isEnumType() ) {
+        return QVariant::fromValue( MetaEnumVariable( mp.enumerator(), mp.read( object ).toInt() ) );
+      }
 
-    if ( mp.isEnumType() ) {
-      MetaEnumVariable mev( mp.enumerator(), mp.read( object ).toInt() );
-      return QVariant::fromValue( mev );
+      return mp.read( object );
     }
-
-    return mp.read( object );
   }
+
   QMetaEnum me;
   for ( int i = 0; i < metaObj->enumeratorCount(); ++i ) {
     me = metaObj->enumerator( i );
 
-    if ( QLatin1String( me.name() ) == property ) {
-      MetaEnumVariable mev( me );
-      return QVariant::fromValue( mev );
+    if ( me.name() == propertyUtf8 ) {
+      return QVariant::fromValue( MetaEnumVariable(me) );
     }
 
-    const int value = me.keyToValue( property.toLatin1().constData() );
-
-    if ( value < 0 )
-      continue;
-
-    const MetaEnumVariable mev( me, value );
-
-    return QVariant::fromValue( mev );
+    bool ok;
+    const int value = me.keyToValue( propertyUtf8.constData(), &ok );
+    if ( ok ) {
+      return QVariant::fromValue( MetaEnumVariable(me, value) );
+    }
   }
-  return object->property( property.toUtf8().constData() );
+
+  return object->property( propertyUtf8.constData() );
+}
+
+inline QVariant doSequentialLookUp( const QSequentialIterable &sequence, const QString &property )
+{
+  if (property == QLatin1String( "size" )
+      || property == QLatin1String( "count" ) ) {
+    return sequence.size();
+  }
+
+  bool ok = false;
+  const int listIndex = property.toInt( &ok );
+
+  if ( !ok || listIndex >= sequence.size() ) {
+    qWarning() << "Wrong Sequential index:" << property;
+    return QVariant();
+  }
+
+  return sequence.at(listIndex);
+}
+
+inline QVariant doAssociativeLookUp( const QAssociativeIterable &associative, const QString &property )
+{
+  QVariant mappedValue = associative.value(property);
+  if(mappedValue.isValid())
+    return mappedValue;
+
+  if (property == QLatin1String("size") || property == QLatin1String( "count" ) ) {
+    return associative.size();
+  }
+
+  if ( property == QLatin1String( "items" ) ) {
+    QAssociativeIterable::const_iterator it = associative.begin();
+    const QAssociativeIterable::const_iterator end = associative.end();
+    QVariantList list;
+    list.reserve(associative.size());
+    for ( ; it != end; ++it ) {
+      QVariantList nested;
+      nested.push_back( it.key() );
+      nested.push_back( it.value() );
+      list.push_back( nested );
+    }
+    return list;
+  }
+
+  if ( property == QLatin1String( "keys" ) ) {
+    QAssociativeIterable::const_iterator it = associative.begin();
+    const QAssociativeIterable::const_iterator end = associative.end();
+    QVariantList list;
+    list.reserve(associative.size());
+    for ( ; it != end; ++it ) {
+      list.push_back( it.key() );
+    }
+    return list;
+  }
+
+  if ( property == QLatin1String( "values" ) ) {
+    QAssociativeIterable::const_iterator it = associative.begin();
+    const QAssociativeIterable::const_iterator end = associative.end();
+    QVariantList list;
+    list.reserve(associative.size());
+    for ( ; it != end; ++it ) {
+      list.push_back( it.value() );
+    }
+    return list;
+  }
+
+  qWarning() << "Wrong Associative key:" << property;
+  return QVariant();
 }
 
 QVariant Grantlee::MetaType::lookup( const QVariant &object, const QString &property )
 {
-  if (object.canConvert<QObject*>()) {
-    return doQobjectLookUp(object.value<QObject*>(), property);
-  }
-  if (object.userType() == qMetaTypeId<QVariantList>()
-      || object.userType() == qMetaTypeId<QStringList>()
-      || QMetaType::hasRegisteredConverterFunction(object.userType(),
-        qMetaTypeId<QtMetaTypePrivate::QSequentialIterableImpl>())) {
-    QSequentialIterable iter = object.value<QSequentialIterable>();
-    if (property == QLatin1String("size") || property == QLatin1String( "count" ) )
-    {
-      return iter.size();
-    }
-
-    bool ok = false;
-    const int listIndex = property.toInt( &ok );
-
-    if ( !ok || listIndex >= iter.size() ) {
-      return QVariant();
-    }
-
-    return iter.at(listIndex);
-  }
-  if (object.userType() == qMetaTypeId<QVariantHash>()
-      || object.userType() == qMetaTypeId<QVariantMap>()
-      || QMetaType::hasRegisteredConverterFunction(object.userType(),
-        qMetaTypeId<QtMetaTypePrivate::QAssociativeIterableImpl>())) {
-
-    QAssociativeIterable iter = object.value<QAssociativeIterable>();
-
-    QVariant mappedValue = iter.value(property);
-    if(mappedValue.isValid())
-      return mappedValue;
-
-    if (property == QLatin1String("size") || property == QLatin1String( "count" ) )
-    {
-      return iter.size();
-    }
-
-    if ( property == QLatin1String( "items" ) ) {
-      QAssociativeIterable::const_iterator it = iter.begin();
-      const QAssociativeIterable::const_iterator end = iter.end();
-      QVariantList list;
-      for ( ; it != end; ++it ) {
-        QVariantList nested;
-        nested.push_back( it.key() );
-        nested.push_back( it.value() );
-        list.push_back( nested );
-      }
-      return list;
-    }
-
-    if ( property == QLatin1String( "keys" ) ) {
-      QAssociativeIterable::const_iterator it = iter.begin();
-      const QAssociativeIterable::const_iterator end = iter.end();
-      QVariantList list;
-      for ( ; it != end; ++it ) {
-        list.push_back( it.key() );
-      }
-      return list;
-    }
-
-    if ( property == QLatin1String( "values" ) ) {
-      QAssociativeIterable::const_iterator it = iter.begin();
-      const QAssociativeIterable::const_iterator end = iter.end();
-      QVariantList list;
-      for ( ; it != end; ++it ) {
-        list.push_back( it.value() );
-      }
-      return list;
-    }
-
+  if ( !object.isValid() )
     return QVariant();
-  }
+
+  if ( object.canConvert(QMetaType::QObjectStar) )
+    return doQobjectLookUp( object.value<QObject*>(), property );
+  if ( object.canConvert(QMetaType::QVariantList) )
+    return doSequentialLookUp( object.value<QSequentialIterable>(), property );
+  if ( object.canConvert(QMetaType::QVariantHash) )
+    return doAssociativeLookUp( object.value<QAssociativeIterable>(), property );
+
   return customTypes()->lookup( object, property );
 }
 
