@@ -76,6 +76,12 @@ class SafeString;
 class GRANTLEE_TEMPLATES_EXPORT OutputStream
 {
 public:
+  enum Option {
+    SKIP_EMPTY_LINES = 0,
+    KEEP_ALL_LINES = 1
+  };
+  typedef QFlags<Option> Options;
+
   /**
     Creates a null OutputStream. Content streamed to this OutputStream is sent to /dev/null
   */
@@ -84,7 +90,7 @@ public:
   /**
     Creates an OutputStream which will stream content to @p stream with appropriate escaping.
   */
-  explicit OutputStream( QTextStream *stream );
+  explicit OutputStream( QTextStream *stream, Options options = SKIP_EMPTY_LINES );
 
   /**
     Destructor
@@ -127,7 +133,14 @@ public:
   OutputStream& operator<<( QTextStream *stream );
 
 private:
+  void append( QString text );
+  void appendLastLine(const QString &linePart );
+  void resetLastLine();
+
   QTextStream *m_stream;
+  Options m_options;
+  QString m_lastLine;
+  bool m_hasLastLineContent;
   Q_DISABLE_COPY( OutputStream )
 };
 

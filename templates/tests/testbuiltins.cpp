@@ -819,6 +819,16 @@ void TestBuiltinSyntax::testMultiline_data()
 
   QTest::newRow( "multiline01" ) << "Hello,\nboys.\nHow\nare\nyou\ngentlemen?" << dict << "Hello,\nboys.\nHow\nare\nyou\ngentlemen?" << NoError;
 
+  QTest::newRow( "multiline02" ) << QString::fromLatin1( "Hello,\n"
+                                                         "{% ifequal true true %}\n"
+                                                         "boys.\n"
+                                                         "{% endifequal %}\n"
+                                                         "How\nare\nyou\ngentlemen?") << dict << "Hello,\nboys.\nHow\nare\nyou\ngentlemen?" << NoError;
+
+  QTest::newRow( "multiline03" ) << QString::fromLatin1( "Hello,  {% ifequal true true %}\n"
+                                                         "  boys.  \n"
+                                                         "  {% endifequal %}  \n"
+                                                         "  How\nare\nyou\ngentlemen?") << dict << "Hello,  \n  boys.  \n  How\nare\nyou\ngentlemen?" << NoError;
 }
 
 void TestBuiltinSyntax::testEscaping_data()
@@ -1410,7 +1420,11 @@ void TestBuiltinSyntax::testInsignificantWhitespace()
   {
     Template t = m_engine->newTemplate( input, QLatin1String( QTest::currentDataTag() ) );
 
-    QString result = t->render( &context );
+    QString result;
+    QTextStream textStream( &result );
+    OutputStream outputStream( &textStream, OutputStream::KEEP_ALL_LINES );
+
+    t->render( &outputStream, &context );
 
     QCOMPARE( t->error(), NoError );
 
@@ -1420,7 +1434,11 @@ void TestBuiltinSyntax::testInsignificantWhitespace()
   {
     Template t = m_engine->newTemplate( input, QLatin1String( QTest::currentDataTag() ) );
 
-    QString result = t->render( &context );
+    QString result;
+    QTextStream textStream( &result );
+    OutputStream outputStream( &textStream, OutputStream::KEEP_ALL_LINES );
+
+    t->render( &outputStream, &context );
 
     QCOMPARE( t->error(), NoError );
 

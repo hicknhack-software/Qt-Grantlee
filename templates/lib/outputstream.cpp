@@ -22,16 +22,23 @@
 
 #include "safestring.h"
 
+#include <QRegExp>
+
 using namespace Grantlee;
+
 
 OutputStream::OutputStream()
   : m_stream( 0 )
+  , m_options( SKIP_EMPTY_LINES )
+  , m_hasLastLineContent( true )
 {
 
 }
 
-OutputStream::OutputStream( QTextStream *stream )
+OutputStream::OutputStream(QTextStream *stream , Options options)
   : m_stream( stream )
+  , m_options( options )
+  , m_hasLastLineContent( true )
 {
 
 }
@@ -71,19 +78,15 @@ QSharedPointer<OutputStream> OutputStream::clone( QTextStream *stream ) const
 
 OutputStream& OutputStream::operator<<( const QString& input )
 {
-  if ( m_stream )
-    ( *m_stream ) << input;
+  if( m_stream )
+    append( input );
   return *this;
 }
 
 OutputStream& OutputStream::operator<<( const Grantlee::SafeString& input )
 {
-  if ( m_stream ) {
-    if ( input.needsEscape() )
-      ( *m_stream ) << escape( input.get() );
-    else
-      ( *m_stream ) << input.get();
-  }
+  if ( m_stream )
+    append( input.needsEscape() ? escape( input.get() ) : (QString)input.get() );
   return *this;
 }
 /*
@@ -96,8 +99,8 @@ OutputStream& OutputStream::operator<<(const Grantlee::OutputStream::Escape& e)
 OutputStream& OutputStream::operator<<( QTextStream* stream )
 {
   if ( m_stream )
-    ( *m_stream ) << stream->readAll();
-  return *this;
+    append( stream->readAll() );
+    return *this;
 }
 /*
 Grantlee::OutputStream::MarkSafe::MarkSafe(const QString& input)
@@ -112,3 +115,57 @@ Grantlee::OutputStream::MarkSafe::MarkSafe(const Grantlee::SafeString& input)
 
 }
 */
+
+void OutputStream::append( QString text )
+{
+  if ( text.isEmpty() )
+    return;
+
+  if ( m_options.testFlag(KEEP_ALL_LINES) ) {
+    ( *m_stream ) << text;
+    return;
+  }
+
+  int firstNewlineIndex = text.indexOf("\n");
+  if ( -1 == firstNewlineIndex ) {
+    appendLastLine( text );
+    return;
+  }
+
+  appendLastLine( text.left(firstNewlineIndex + 1) );
+  text = text.mid(firstNewlineIndex + 1);
+
+  resetLastLine();
+
+  int lastNewlineIndex = text.lastIndexOf("\n");
+  if ( -1 == lastNewlineIndex ) {
+    appendLastLine( text );
+    return;
+  }
+
+  ( *m_stream ) << text.left( lastNewlineIndex + 1 );
+  appendLastLine( text.mid( lastNewlineIndex + 1 ) );
+}
+
+void OutputStream::appendLastLine(const QString &linePart)
+{
+  static QRegExp non_whitespace("[^\\n\\s]");
+
+  m_lastLine += linePart;
+
+  if( m_hasLastLineContent ) {
+    ( *m_stream ) << linePart;
+  }
+  else {
+    m_hasLastLineContent = linePart.contains(non_whitespace);
+    if( m_hasLastLineContent ) {
+      ( *m_stream ) << m_lastLine;
+    }
+  }
+}
+
+void OutputStream::resetLastLine()
+{
+  m_lastLine = QString();
+  m_hasLastLineContent = false;
+}
