@@ -31,25 +31,11 @@
 
 using namespace Grantlee;
 
-static QVariantList mevToList(const MetaEnumVariable mev)
-{
-  if ( mev.value != -1 )
-    return QVariantList();
-
-  QVariantList list;
-  for ( int row = 0; row < mev.enumerator.keyCount(); ++row ) {
-    list << QVariant::fromValue( MetaEnumVariable( mev.enumerator, row ) );
-  }
-  return list;
-}
-
 CustomTypeRegistry::CustomTypeRegistry()
 {
   // Grantlee Types
   registerBuiltInMetatype<SafeString>();
   registerBuiltInMetatype<MetaEnumVariable>();
-
-  QMetaType::registerConverter<MetaEnumVariable, QVariantList>(&mevToList);
 }
 
 void CustomTypeRegistry::registerLookupOperator( int id, MetaType::LookupFunction f )
