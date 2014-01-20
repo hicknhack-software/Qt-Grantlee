@@ -65,6 +65,12 @@ bool Grantlee::variantIsTrue( const QVariant &variant )
     return ( variant.toHash().size() > 0 );
   }
   }
+  if ( variant.canConvert(QMetaType::QVariantList) ) {
+    return ( variant.value<QSequentialIterable>().size() > 0 );
+  }
+  if ( variant.canConvert(QMetaType::QVariantHash) ) {
+    return ( variant.value<QAssociativeIterable>().size() > 0 );
+  }
 
   return !getSafeString( variant ).get().isEmpty();
 }
@@ -154,11 +160,11 @@ bool Grantlee::equals( const QVariant &lhs, const QVariant &rhs )
   return equal;
 }
 
-Grantlee::SafeString Grantlee::toString( const QVariantList &list )
+Grantlee::SafeString Grantlee::toString( const QSequentialIterable &list )
 {
   QString output( QLatin1Char( '[' ) );
-  QVariantList::const_iterator it = list.constBegin();
-  const QVariantList::const_iterator end = list.constEnd();
+  QSequentialIterable::const_iterator it = list.begin();
+  const QSequentialIterable::const_iterator end = list.end();
   while ( it != end ) {
     const QVariant item = *it;
     if ( isSafeString( item ) ) {
@@ -174,8 +180,8 @@ Grantlee::SafeString Grantlee::toString( const QVariantList &list )
     ) {
       output += item.toString();
     }
-    if ( item.type() == QVariant::List ) {
-      output += static_cast<QString>( toString( item.toList() ).get() );
+    if ( item.canConvert(QMetaType::QVariantList) ) {
+      output += static_cast<QString>( toString( item.value<QSequentialIterable>() ).get() );
     }
     if ( ( it + 1 ) != end )
       output += QLatin1String( ", " );

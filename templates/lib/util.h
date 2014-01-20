@@ -84,7 +84,7 @@ GRANTLEE_TEMPLATES_EXPORT bool equals( const QVariant &lhs, const QVariant &rhs 
   @internal
   Returns the @p list as a formatted string. This is for debugging purposes only.
 */
-GRANTLEE_TEMPLATES_EXPORT Grantlee::SafeString toString( const QVariantList &list );
+GRANTLEE_TEMPLATES_EXPORT Grantlee::SafeString toString( const QSequentialIterable &list );
 #endif
 
 }

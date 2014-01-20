@@ -154,8 +154,8 @@ QVariant StringFormatFilter::doFilter( const QVariant& input, const QVariant &ar
   SafeString a;
   if ( isSafeString( input ) )
     a = getSafeString( input );
-  else if ( input.type() == QVariant::List ) {
-    a = toString( input.toList() );
+  else if ( input.canConvert(QMetaType::QVariantList) ) {
+    a = toString( input.value<QSequentialIterable>() );
   }
 
   return SafeString( getSafeString( argument ).get().arg( a ), getSafeString( input ).isSafe() );
