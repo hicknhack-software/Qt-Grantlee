@@ -95,6 +95,11 @@ inline QVariant doQobjectLookUp( const QObject * const object, const QString &pr
     }
   }
 
+#if !defined(QT_NO_DEBUG)
+  if (!object->dynamicPropertyNames().contains(propertyUtf8) && object->metaObject()->indexOfProperty(propertyUtf8.constData())) {
+    qWarning() << "Missing property name:" << property;
+  }
+#endif
   return object->property( propertyUtf8.constData() );
 }
 
@@ -109,7 +114,9 @@ inline QVariant doSequentialLookUp( const QSequentialIterable &sequence, const Q
   const int listIndex = property.toInt( &ok );
 
   if ( !ok || listIndex >= sequence.size() ) {
+#if !defined(QT_NO_DEBUG)
     qWarning() << "Wrong Sequential index:" << property;
+#endif
     return QVariant();
   }
 
@@ -162,7 +169,9 @@ inline QVariant doAssociativeLookUp( const QAssociativeIterable &associative, co
     return list;
   }
 
+#if !defined(QT_NO_DEBUG)
   qWarning() << "Wrong Associative key:" << property;
+#endif
   return QVariant();
 }
 

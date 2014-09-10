@@ -51,8 +51,8 @@ Q_DECLARE_ASSOCIATIVE_CONTAINER_METATYPE(QtUnorderedMap)
 
 Q_DECLARE_SMART_POINTER_METATYPE(std::tr1::shared_ptr)
 
-Q_DECLARE_SEQUENTIAL_CONTAINER_METATYPE(std::deque)
 #endif
+Q_DECLARE_SEQUENTIAL_CONTAINER_METATYPE(std::deque)
 
 class TestGenericTypes : public CoverageObject
 {
